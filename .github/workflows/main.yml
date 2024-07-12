@@ -14,6 +14,23 @@ jobs:
     steps:
       - name: Print environment variables
         run: echo "${{ inputs.AEM_ENV }}"
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Validate Environment Input
+        id: validate
+        run: |
+          VALID_ENVIRONMENTS=$(awk '/awsAccounts:/{flag=1;next}/type/{flag=0}flag' .github/environments.yaml | sed 's/- //g' | tr '\n' ' ' | tr '[:upper:]' '[:lower:]')
+          INPUT_ENVIRONMENT=$(echo "${{ inputs.AEM_ENV }}" | tr '[:upper:]' '[:lower:]')
+          VALID_ENVIRONMENTS_ARRAY=($VALID_ENVIRONMENTS)
+          if [[ " ${VALID_ENVIRONMENTS_ARRAY[@]} " =~ " ${INPUT_ENVIRONMENT} " ]]; then
+            echo "Environment input is valid: ${INPUT_ENVIRONMENT}"
+            echo "environment=${INPUT_ENVIRONMENT}" >> $GITHUB_OUTPUT
+          else
+            echo "Invalid environment input: ${INPUT_ENVIRONMENT}"
+            exit 1
+          fi
         
 
      
