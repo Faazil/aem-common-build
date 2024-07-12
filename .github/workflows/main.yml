@@ -15,14 +15,8 @@ jobs:
       - name: Print environment variables
         run: echo "${{ inputs.AEM_ENV }}"
 
-      - name: Checkout aem-proj repo
-        run: git clone https://github.com/Faazil/aem-common-build.git
-
-      - name: ls
-        run: sudo apt-get install tree -y && tree 
-
-      - name: get env file contents
-        run:  cat ./aem-common-build/environments.yaml
+      - name: Checkout 
+        uses: actions/checkout@v3.5.3
 
       - name: Validate Environment Input
         id: validate
