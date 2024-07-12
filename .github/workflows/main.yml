@@ -19,7 +19,7 @@ jobs:
         run: git clone https://github.com/Faazil/aem-common-build.git
 
       - name: ls
-        run: yum install tree -y && tree 
+        run: apt-get install tree -y && tree 
 
       - name: Validate Environment Input
         id: validate
