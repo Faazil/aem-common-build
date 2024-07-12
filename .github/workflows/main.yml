@@ -18,6 +18,9 @@ jobs:
       - name: Checkout aem-proj repo
         run: git clone https://github.com/Faazil/aem-common-build.git
 
+      - name: ls
+        run: yum install tree -y && tree 
+
       - name: Validate Environment Input
         id: validate
         run: |
