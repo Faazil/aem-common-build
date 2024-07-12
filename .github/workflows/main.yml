@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Print environment variables
-        run: echo "$AEM_ENV"
+        run: echo "${{ inputs.AEM_ENV }}"
         
 
      
