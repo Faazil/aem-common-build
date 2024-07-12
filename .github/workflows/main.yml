@@ -16,7 +16,7 @@ jobs:
         run: echo "${{ inputs.AEM_ENV }}"
 
       - name: Checkout aem-proj repo
-        run: git clone https://github.com/Faazil/aem-project.git
+        run: git clone https://github.com/Faazil/aem-common-build.git
 
       - name: Validate Environment Input
         id: validate
