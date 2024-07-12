@@ -15,8 +15,8 @@ jobs:
       - name: Print environment variables
         run: echo "${{ inputs.AEM_ENV }}"
 
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout aem-proj repo
+        run: git clone https://github.com/Faazil/aem-project.git
 
       - name: Validate Environment Input
         id: validate
