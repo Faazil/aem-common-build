@@ -21,6 +21,9 @@ jobs:
       - name: ls
         run: sudo apt-get install tree -y && tree 
 
+      - name: get env file contents
+        run:  cat ./aem-common-build/environments.yaml
+
       - name: Validate Environment Input
         id: validate
         run: |
