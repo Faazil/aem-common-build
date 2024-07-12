@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Print environment variables
-        run: echo "Hello"
+        run: echo "$AEM_ENV"
+        
 
      
