@@ -1,1 +1,67 @@
-ff
+name: Upload AEM Package Workflow
+
+on:
+  workflow_call:
+    inputs:
+      AEM_ENV:
+        required: true
+        type: string
+   
+
+jobs:
+  upload-package:
+    runs-on: rhel999
+    steps:
+      - name: Print environment variables
+        run: env
+
+      - name: Check AEM service availability
+        run: curl -u admin:admin http://localhost:4502
+
+      - name: List directory contents
+        run: ls -l
+
+      - name: Upload AEM package
+        if: ${{ inputs.AEM_HOST }}
+        env:
+          AEM_CREDENTIALS: ${{ inputs.AEM_CREDENTIALS }}
+          AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
+          AEM_HOST: ${{ inputs.AEM_HOST }}
+        run: |
+          echo "Deploying to: $AEM_HOST"
+          curl -u $AEM_CREDENTIALS \
+            -F cmd=upload \
+            -F force=true \
+            -F package=@${AEM_PACKAGE_NAME} \
+            --connect-timeout 10 \
+            "$AEM_HOST/crx/packmgr/service/.json"
+
+      - name: Upload AEM package to preview
+        if: ${{ inputs.AEM_HOST_PREVIEW }}
+        env:
+          AEM_CREDENTIALS: ${{ inputs.AEM_CREDENTIALS }}
+          AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
+          AEM_HOST_PREVIEW: ${{ inputs.AEM_HOST_PREVIEW }}
+        run: |
+          echo "Deploying to preview: $AEM_HOST_PREVIEW"
+          curl -u $AEM_CREDENTIALS \
+            -F cmd=upload \
+            -F force=true \
+            -F package=@${AEM_PACKAGE_NAME} \
+            --connect-timeout 10 \
+            "$AEM_HOST_PREVIEW/crx/packmgr/service/.json"
+
+      - name: Upload AEM package to author (prod-live and non-prod environments)
+        if: ${{ inputs.AEM_HOST_AUTHOR }} && (github.event.inputs.environment == 'prod-live' || github.event.inputs.environment != 'prod')
+        env:
+          AEM_CREDENTIALS: ${{ inputs.AEM_CREDENTIALS }}
+          AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
+          AEM_HOST_AUTHOR: ${{ inputs.AEM_HOST_AUTHOR }}
+        run: |
+          echo "Deploying to author: $AEM_HOST_AUTHOR"
+          curl -u $AEM_CREDENTIALS \
+            -F cmd=upload \
+            -F force=true \
+            -F package=@${AEM_PACKAGE_NAME} \
+            --connect-timeout 10 \
+            "$AEM_HOST_AUTHOR/crx/packmgr/service/.json"
