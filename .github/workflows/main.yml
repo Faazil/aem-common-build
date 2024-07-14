@@ -78,8 +78,8 @@ jobs:
           echo "AEM_HOST_PREVIEW: $AEM_HOST_PREVIEW"
           echo "AEM_HOST: $AEM_HOST"
 
-      - name: Upload AEM package to Author
-        if: env.AEM_HOST_AUTHOR
+      - name: Upload AEM package to Author ( When input contains string *live*)
+        if: contains(env.environment, 'live') && env.AEM_HOST_AUTHOR
         env:
           AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
           AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
@@ -87,34 +87,15 @@ jobs:
         run: |
           echo "Deploying to: $AEM_HOST_AUTHOR"
           RESPONSE=$(curl -u $AEM_CREDENTIALS \
-            -F cmd=upload \
-            -F force=true \
-            -F package=@${AEM_PACKAGE_NAME} \
-            --connect-timeout 10 \
-            "$AEM_HOST_AUTHOR/crx/packmgr/service/.json")
+          -F cmd=upload \
+          -F force=true \
+          -F package=@${AEM_PACKAGE_NAME} \
+          --connect-timeout 10 \
+          "$AEM_HOST_AUTHOR/crx/packmgr/service/.json")
 
           echo "Response: $RESPONSE"
-          
           AEM_GROUP=$(echo $RESPONSE | grep -oP '(?<=<group>).*?(?=</group>)')
           AEM_DOWNLOAD_NAME=$(echo $RESPONSE | grep -oP '(?<=<downloadName>).*?(?=</downloadName>)')
-
-          echo "AEM_GROUP=$AEM_GROUP" >> $GITHUB_ENV
-          echo "AEM_DOWNLOAD_NAME=$AEM_DOWNLOAD_NAME" >> $GITHUB_ENV
-
-      - name: Upload and Install AEM package
-        run: |
-          INSTALL_RESPONSE=$(curl -u admin:admin \
-            -F file=@we.retail.community.apps-1.11.84.zip \
-            -F name=test.zip \
-            -F force=true \
-            -F install=true \
-            http://localhost:4502/crx/packmgr/service.jsp)
-
-          echo "Install Response: $INSTALL_RESPONSE"
-
-          AEM_GROUP=$(echo $INSTALL_RESPONSE | grep -oP '(?<=<group>).*?(?=</group>)')
-          AEM_DOWNLOAD_NAME=$(echo $INSTALL_RESPONSE | grep -oP '(?<=<downloadName>).*?(?<=</downloadName>)')
-
           echo "AEM_GROUP=$AEM_GROUP" >> $GITHUB_ENV
           echo "AEM_DOWNLOAD_NAME=$AEM_DOWNLOAD_NAME" >> $GITHUB_ENV
 
@@ -122,6 +103,7 @@ jobs:
         run: |
           echo "Extracted AEM_GROUP: $AEM_GROUP"
           echo "Extracted AEM_DOWNLOAD_NAME: $AEM_DOWNLOAD_NAME"
+    
 
       - name: Upload AEM package to preview
         if: env.AEM_HOST_PREVIEW
@@ -138,8 +120,8 @@ jobs:
             --connect-timeout 10 \
             "$AEM_HOST_PREVIEW/crx/packmgr/service/.json"
 
-      - name: Upload AEM package to author (prod-live and non-prod environments)
-        if: env.AEM_HOST_AUTHOR && (github.event.inputs.AEM_ENV == 'prod-live' || github.event.inputs.AEM_ENV != 'prod')
+      - name: Upload AEM package to author (prod-live and non-prod environments) - PENDING
+        if: env.AEM_HOST_AUTHOR && env.AEM_HOST 
         env:
           AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
           AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
