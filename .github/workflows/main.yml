@@ -45,12 +45,7 @@ jobs:
       - name: Extract Environment URL
         id: extract_url
         run: |
-          environment=$(echo "${{ inputs.AEM_ENV }}" | tr '[:upper:]' '[:lower:]')
-          
-          # Debug: Print the content of the env_urls.yaml file
-          echo "Content of .github/env_urls.yaml:"
-          cat .github/env_urls.yaml
-          
+          environment=$(echo "${{ inputs.AEM_ENV }}" | tr '[:upper:]' '[:lower:]')     
           if [[ "$environment" == *"prod-live"* ]]; then
             stripped_env=$(echo "$environment" | sed 's/-live//')
             url=$(awk -v env="$stripped_env" -F": " 'tolower($1) ~ "^ *"tolower(env)" *$" {print $2}' .github/env_urls.yaml)
@@ -77,7 +72,7 @@ jobs:
             echo "::set-output name=AEM_HOST::$url"
           fi
 
-      - name: Debugging URL
+      - name: Print URL
         run: |
           echo "AEM_HOST_AUTHOR: $AEM_HOST_AUTHOR"
           echo "AEM_HOST_PREVIEW: $AEM_HOST_PREVIEW"
