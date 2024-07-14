@@ -94,8 +94,9 @@ jobs:
           AEM_PACKAGE_NAME: aem/we.retail.community.apps-1.11.84.zip
           AEM_HOST_AUTHOR: ${{ env.AEM_HOST_AUTHOR }}
         run: |
+          set -x
           echo "Deploying to: $AEM_HOST_AUTHOR"
-          RESPONSE=$(curl -u $AEM_CREDENTIALS \     
+          RESPONSE=$(curl -v -u $AEM_CREDENTIALS \     
           -F force=true \
           -F package=@${AEM_PACKAGE_NAME} \
           --connect-timeout 10 \
