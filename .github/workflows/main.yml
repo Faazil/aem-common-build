@@ -86,7 +86,7 @@ jobs:
              echo "AEM package file does not exist."
           exit 1
           fi
-
+##-F cmd=upload \##
       - name: Upload AEM package to Author ( When input contains string *live*)
         if: contains(env.environment, 'live') && env.AEM_HOST_AUTHOR
         env:
@@ -95,12 +95,11 @@ jobs:
           AEM_HOST_AUTHOR: ${{ env.AEM_HOST_AUTHOR }}
         run: |
           echo "Deploying to: $AEM_HOST_AUTHOR"
-          RESPONSE=$(curl -u $AEM_CREDENTIALS \
-          -F cmd=upload \
+          RESPONSE=$(curl -u $AEM_CREDENTIALS \     
           -F force=true \
           -F package=@${AEM_PACKAGE_NAME} \
           --connect-timeout 10 \
-          "$AEM_HOST_AUTHOR/crx/packmgr/service/.json")
+          "$AEM_HOST_AUTHOR/crx/packmgr/service/.json/?cmd=upload")
 
           echo "Response: $RESPONSE"
           AEM_GROUP=$(echo $RESPONSE | grep -oP '(?<=<group>).*?(?=</group>)')
