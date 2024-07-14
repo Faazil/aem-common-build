@@ -87,7 +87,7 @@ jobs:
           exit 1
           fi
 ##-F cmd=upload \##
-      - name: Upload AEM package to Author ( When input contains string *live*)
+      - name: Upload AEM package to Author ( When input contains string *live*)- Always
         if: contains(env.environment, 'live') && env.AEM_HOST_AUTHOR
         env:
           AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
@@ -113,8 +113,8 @@ jobs:
           echo "Extracted AEM_DOWNLOAD_NAME: $AEM_DOWNLOAD_NAME"
     
 
-      - name: Upload AEM package to preview
-        if: env.AEM_HOST_PREVIEW
+      - name: Upload AEM package to preview- Only prod
+        if: env.AEM_HOST_PREVIEW 
         env:
           AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
           AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
@@ -128,23 +128,9 @@ jobs:
             --connect-timeout 10 \
             "$AEM_HOST_PREVIEW/crx/packmgr/service/.json"
 
-      - name: Upload AEM package to author (prod-live and non-prod environments) - PENDING
-        if: env.AEM_HOST_AUTHOR && env.AEM_HOST 
-        env:
-          AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
-          AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
-          AEM_HOST_AUTHOR: ${{ env.AEM_HOST_AUTHOR }}
-        run: |
-          echo "Deploying to author: $AEM_HOST_AUTHOR"
-          curl -u $AEM_CREDENTIALS \
-            -F cmd=upload \
-            -F force=true \
-            -F package=@${AEM_PACKAGE_NAME} \
-            --connect-timeout 10 \
-            "$AEM_HOST_AUTHOR/crx/packmgr/service/.json"
-        
-      - name: Activate AEM Package
-        if: env.AEM_HOST_AUTHOR && env.AEM_HOST
+              
+      - name: Activate AEM Package to Replicate
+        if: env.AEM_HOST_AUTHOR (or) env.AEM_HOST (!= preview )
         env:
           AEM_GROUP: ${{ env.AEM_GROUP }}
           AEM_DOWNLOAD_NAME: ${{ env.AEM_DOWNLOAD_NAME }}
