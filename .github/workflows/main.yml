@@ -64,8 +64,8 @@ jobs:
               echo "Invalid environment: $environment"
               exit 1
             fi
-            echo "AEM_HOST_AUTHOR=$url" >> $GITHUB_ENV
-            echo "::set-output name=AEM_HOST_AUTHOR::$url"
+            echo "AEM_HOST=$url" >> $GITHUB_ENV
+            echo "::set-output name=AEM_HOST::$url"
           fi
 
       - name: Extract Environment URL
