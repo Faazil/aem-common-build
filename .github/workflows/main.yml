@@ -53,6 +53,7 @@ jobs:
           
           if [[ "$environment" == *"prod-live"* ]]; then
             stripped_env=$(echo "$environment" | sed 's/-live//')
+            echo "Stripped URL: $stripped_env"
             url=$(awk -v env="$stripped_env" -F": " '$1 ~ "^ *"env" *$" {print $2}' .github/env_urls.yaml | xargs)
             echo "Prod-live environment detected, URL: $url"
             echo "AEM_HOST_AUTHOR=$url" >> $GITHUB_ENV
