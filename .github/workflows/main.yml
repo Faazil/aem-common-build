@@ -26,7 +26,7 @@ jobs:
           VALID_ENVIRONMENTS_ARRAY=($VALID_ENVIRONMENTS)
           if [[ " ${VALID_ENVIRONMENTS_ARRAY[@]} " =~ " ${INPUT_ENVIRONMENT} " ]]; then
             echo "Environment input is valid: ${INPUT_ENVIRONMENT}"
-            echo "environment=${INPUT_ENVIRONMENT}" >> $GITHUB_OUTPUT
+            echo "environment=${INPUT_ENVIRONMENT}" >> $GITHUB_ENV
           else
             echo "Invalid environment input: ${INPUT_ENVIRONMENT}"
             exit 1
@@ -48,15 +48,12 @@ jobs:
             url=$(awk -v lob="$environment" -F": " '/^ *"lob"-prod:/{print $2}' .github/env_urls.yaml)
             echo "Prod-live environment detected, URL: $url"
             echo "AEM_HOST_AUTHOR=$url" >> $GITHUB_ENV
-            echo "::set-output name=AEM_HOST_AUTHOR::$url"
           elif [[ "$environment" == *"prod"* ]] && [[ "$environment" != *"live"* ]]; then
             url_author=$(awk -v lob="$environment" -F": " '/^ *"$environment":/{print $2}' .github/env_urls.yaml)
             url_preview=$(awk -v lob="$environment" -F": " '/^ *"$environment"-preview:/{print $2}' .github/env_urls.yaml)
             echo "Prod environment detected, URLs: $url_author, $url_preview"
             echo "AEM_HOST_AUTHOR=$url_author" >> $GITHUB_ENV
             echo "AEM_HOST_PREVIEW=$url_preview" >> $GITHUB_ENV
-            echo "::set-output name=AEM_HOST_AUTHOR::$url_author"
-            echo "::set-output name=AEM_HOST_PREVIEW::$url_preview"
           else
             url=$(awk -v env="$environment" 'BEGIN {FS=": "; OFS=": "} $1 ~ "^ *"env"$" {gsub(/^ *| *$/, "", $2); print $2}' .github/env_urls.yaml)
             echo "General environment detected, URL: $url"
@@ -65,56 +62,62 @@ jobs:
               exit 1
             fi
             echo "AEM_HOST=$url" >> $GITHUB_ENV
-            echo "::set-output name=AEM_HOST::$url"
           fi
 
-      - name: Extract Environment URL
-        run: echo $AEM_HOST
+      - name: Debugging URL
+        run: echo "AEM_HOST_AUTHOR: $AEM_HOST_AUTHOR, AEM_HOST_PREVIEW: $AEM_HOST_PREVIEW, AEM_HOST: $AEM_HOST"
 
       - name: Upload AEM package to Author
-        if: ${{ inputs.AEM_HOST }}
+        if: ${{ env.AEM_HOST_AUTHOR }}
         env:
-          AEM_CREDENTIALS: ${{ inputs.AEM_CREDENTIALS }}
+          AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
           AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
-          AEM_HOST: ${{ inputs.AEM_HOST }}
+          AEM_HOST_AUTHOR: ${{ env.AEM_HOST_AUTHOR }}
         run: |
-          echo "Deploying to: $AEM_HOST"
-          curl -u $AEM_CREDENTIALS \
+          echo "Deploying to: $AEM_HOST_AUTHOR"
+          RESPONSE=$(curl -u $AEM_CREDENTIALS \
             -F cmd=upload \
             -F force=true \
             -F package=@${AEM_PACKAGE_NAME} \
             --connect-timeout 10 \
-            "$AEM_HOST_AUTHOR/crx/packmgr/service/.json"
+            "$AEM_HOST_AUTHOR/crx/packmgr/service/.json")
+
+          echo "Response: $RESPONSE"
+          
+          AEM_GROUP=$(echo $RESPONSE | grep -oP '(?<=<group>).*?(?=</group>)')
+          AEM_DOWNLOAD_NAME=$(echo $RESPONSE | grep -oP '(?<=<downloadName>).*?(?=</downloadName>)')
+
+          echo "AEM_GROUP=$AEM_GROUP" >> $GITHUB_ENV
+          echo "AEM_DOWNLOAD_NAME=$AEM_DOWNLOAD_NAME" >> $GITHUB_ENV
 
       - name: Upload and Install AEM package
         run: |
-           INSTALL_RESPONSE=$(curl -u admin:admin \
-           -F file=@we.retail.community.apps-1.11.84.zip \
-           -F name=test.zip \
-           -F force=true \
-           -F install=true \
-           http://localhost:4502/crx/packmgr/service.jsp)
+          INSTALL_RESPONSE=$(curl -u admin:admin \
+            -F file=@we.retail.community.apps-1.11.84.zip \
+            -F name=test.zip \
+            -F force=true \
+            -F install=true \
+            http://localhost:4502/crx/packmgr/service.jsp)
 
-           echo "Install Response: $INSTALL_RESPONSE"
+          echo "Install Response: $INSTALL_RESPONSE"
 
-           AEM_GROUP=$(echo $INSTALL_RESPONSE | grep -oP '(?<=<group>).*?(?=</group>)')
-           AEM_DOWNLOAD_NAME=$(echo $INSTALL_RESPONSE | grep -oP '(?<=<downloadName>).*?(?=</downloadName>)')
+          AEM_GROUP=$(echo $INSTALL_RESPONSE | grep -oP '(?<=<group>).*?(?=</group>)')
+          AEM_DOWNLOAD_NAME=$(echo $INSTALL_RESPONSE | grep -oP '(?<=<downloadName>).*?(?=</downloadName>)')
 
-           echo "AEM_GROUP=$AEM_GROUP" >> $GITHUB_ENV
-           echo "AEM_DOWNLOAD_NAME=$AEM_DOWNLOAD_NAME" >> $GITHUB_ENV
+          echo "AEM_GROUP=$AEM_GROUP" >> $GITHUB_ENV
+          echo "AEM_DOWNLOAD_NAME=$AEM_DOWNLOAD_NAME" >> $GITHUB_ENV
 
       - name: Checking output 
         run: |
           echo "Extracted AEM_GROUP: $AEM_GROUP"
           echo "Extracted AEM_DOWNLOAD_NAME: $AEM_DOWNLOAD_NAME"
 
-
       - name: Upload AEM package to preview
-        if: ${{ inputs.AEM_HOST_PREVIEW }}
+        if: ${{ env.AEM_HOST_PREVIEW }}
         env:
-          AEM_CREDENTIALS: ${{ inputs.AEM_CREDENTIALS }}
+          AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
           AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
-          AEM_HOST_PREVIEW: ${{ inputs.AEM_HOST_PREVIEW }}
+          AEM_HOST_PREVIEW: ${{ env.AEM_HOST_PREVIEW }}
         run: |
           echo "Deploying to preview: $AEM_HOST_PREVIEW"
           curl -u $AEM_CREDENTIALS \
@@ -125,11 +128,11 @@ jobs:
             "$AEM_HOST_PREVIEW/crx/packmgr/service/.json"
 
       - name: Upload AEM package to author (prod-live and non-prod environments)
-        if: ${{ inputs.AEM_HOST_AUTHOR }} && (github.event.inputs.environment == 'prod-live' || github.event.inputs.environment != 'prod')
+        if: ${{ env.AEM_HOST_AUTHOR }} && (github.event.inputs.AEM_ENV == 'prod-live' || github.event.inputs.AEM_ENV != 'prod')
         env:
-          AEM_CREDENTIALS: ${{ inputs.AEM_CREDENTIALS }}
+          AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
           AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
-          AEM_HOST_AUTHOR: ${{ inputs.AEM_HOST_AUTHOR }}
+          AEM_HOST_AUTHOR: ${{ env.AEM_HOST_AUTHOR }}
         run: |
           echo "Deploying to author: $AEM_HOST_AUTHOR"
           curl -u $AEM_CREDENTIALS \
@@ -141,15 +144,14 @@ jobs:
         
       - name: Activate AEM Package
         env:
-         AEM_GROUP: ${{ env.AEM_GROUP }}
-         AEM_DOWNLOAD_NAME: ${{ env.AEM_DOWNLOAD_NAME }}
+          AEM_GROUP: ${{ env.AEM_GROUP }}
+          AEM_DOWNLOAD_NAME: ${{ env.AEM_DOWNLOAD_NAME }}
         run: |
           echo "Activating package: $AEM_GROUP/$AEM_DOWNLOAD_NAME"
           ACTIVATION_RESPONSE=$(curl -u admin:admin \
-          -X POST \
-          -F path="/etc/packages/$AEM_GROUP/$AEM_DOWNLOAD_NAME" \
-          -F cmd="activate" \
-          http://localhost:4502/bin/replicate.json)
+            -X POST \
+            -F path="/etc/packages/$AEM_GROUP/$AEM_DOWNLOAD_NAME" \
+            -F cmd="activate" \
+            http://localhost:4502/bin/replicate.json)
 
           echo "Activation Response: $ACTIVATION_RESPONSE"
-     
