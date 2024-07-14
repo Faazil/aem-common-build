@@ -44,17 +44,17 @@ jobs:
           environment=${{ inputs.AEM_ENV }}
           
           if [[ "$environment" == *"prod-live"* ]]; then
-            url=$(awk -v lob="$environment" -F": " '/^ *"lob"-prod:/{print $2}' .github/env_urls.yaml)
+            url=$(awk -v lob="$environment" -F": " '$1 ~ "^ *\""lob"-prod\"" {print $2}' .github/env_urls.yaml)
             echo "Prod-live environment detected, URL: $url"
             echo "AEM_HOST_AUTHOR=$url" >> $GITHUB_ENV
           elif [[ "$environment" == *"prod"* ]] && [[ "$environment" != *"live"* ]]; then
-            url_author=$(awk -v lob="$environment" -F": " '/^ *"$environment":/{print $2}' .github/env_urls.yaml)
-            url_preview=$(awk -v lob="$environment" -F": " '/^ *"$environment"-preview:/{print $2}' .github/env_urls.yaml)
+            url_author=$(awk -v lob="$environment" -F": " '$1 ~ "^ *\""lob"\"" {print $2}' .github/env_urls.yaml)
+            url_preview=$(awk -v lob="$environment" -F": " '$1 ~ "^ *\""lob"-preview\"" {print $2}' .github/env_urls.yaml)
             echo "Prod environment detected, URLs: $url_author, $url_preview"
             echo "AEM_HOST_AUTHOR=$url_author" >> $GITHUB_ENV
             echo "AEM_HOST_PREVIEW=$url_preview" >> $GITHUB_ENV
           else
-            url=$(awk -v env="$environment" 'BEGIN {FS=": "; OFS=": "} $1 ~ "^ *"env"$" {gsub(/^ *| *$/, "", $2); print $2}' .github/env_urls.yaml)
+            url=$(awk -v env="$environment" -F": " '$1 ~ "^ *\""env"\"" {print $2}' .github/env_urls.yaml)
             echo "General environment detected, URL: $url"
             if [ -z "$url" ]; then
               echo "Invalid environment: $environment"
@@ -64,7 +64,10 @@ jobs:
           fi
 
       - name: Debugging URL
-        run: echo "$AEM_HOST_AUTHOR,$AEM_HOST_PREVIEW,$AEM_HOST"
+        run: |
+          echo "AEM_HOST_AUTHOR: $AEM_HOST_AUTHOR"
+          echo "AEM_HOST_PREVIEW: $AEM_HOST_PREVIEW"
+          echo "AEM_HOST: $AEM_HOST"
 
       - name: Upload AEM package to Author
         if: env.AEM_HOST_AUTHOR
