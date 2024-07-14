@@ -21,6 +21,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Check Connectivity to AEM Author
+        run: |
+          echo "Testing connectivity to localhost:4502"
+          curl -v http://localhost:4502
+
       - name: Validate Environment Input
         id: validate
         run: |
