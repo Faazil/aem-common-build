@@ -6,7 +6,6 @@ on:
       AEM_ENV:
         required: true
         type: string
-   
 
 jobs:
   upload-package:
@@ -16,7 +15,7 @@ jobs:
         run: echo "${{ inputs.AEM_ENV }}"
 
       - name: Checkout 
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v3
 
       - name: Validate Environment Input
         id: validate
@@ -65,10 +64,10 @@ jobs:
           fi
 
       - name: Debugging URL
-        run: echo "AEM_HOST_AUTHOR: $AEM_HOST_AUTHOR, AEM_HOST_PREVIEW: $AEM_HOST_PREVIEW, AEM_HOST: $AEM_HOST"
+        run: echo "$AEM_HOST_AUTHOR,$AEM_HOST_PREVIEW,$AEM_HOST"
 
       - name: Upload AEM package to Author
-        if: ${{ env.AEM_HOST_AUTHOR }}
+        if: env.AEM_HOST_AUTHOR
         env:
           AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
           AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
@@ -113,7 +112,7 @@ jobs:
           echo "Extracted AEM_DOWNLOAD_NAME: $AEM_DOWNLOAD_NAME"
 
       - name: Upload AEM package to preview
-        if: ${{ env.AEM_HOST_PREVIEW }}
+        if: env.AEM_HOST_PREVIEW
         env:
           AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
           AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
@@ -128,7 +127,7 @@ jobs:
             "$AEM_HOST_PREVIEW/crx/packmgr/service/.json"
 
       - name: Upload AEM package to author (prod-live and non-prod environments)
-        if: ${{ env.AEM_HOST_AUTHOR }} && (github.event.inputs.AEM_ENV == 'prod-live' || github.event.inputs.AEM_ENV != 'prod')
+        if: env.AEM_HOST_AUTHOR && (github.event.inputs.AEM_ENV == 'prod-live' || github.event.inputs.AEM_ENV != 'prod')
         env:
           AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
           AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
