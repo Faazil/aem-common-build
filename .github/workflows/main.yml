@@ -47,15 +47,20 @@ jobs:
         run: |
           environment=${{ steps.validate.outputs.environment }}
           
+          # Debug: Print the content of the env_urls.yaml file
+          echo "Content of .github/env_urls.yaml:"
+          cat .github/env_urls.yaml
+          
+          # Extract URL based on environment
           if [[ "$environment" == *"prod-live"* ]]; then
-            url=$(awk -v env="$environment" -F": " '/^ *"'"$environment"'"-prod:/{print $2}' .github/env_urls.yaml | xargs)
+            stripped_env=$(echo "$environment" | sed 's/-live//')
+            url=$(awk -v env="$stripped_env" -F": " '$1 ~ "^ *\""env"\" {print $2}' .github/env_urls.yaml | xargs)
             echo "Prod-live environment detected, URL: $url"
             echo "AEM_HOST_AUTHOR=$url" >> $GITHUB_ENV
             echo "AEM_HOST_AUTHOR=$url" >> $GITHUB_ENV
-            echo "AEM_HOST_AUTHOR=$url" >> $GITHUB_ENV
           elif [[ "$environment" == *"prod"* ]] && [[ "$environment" != *"live"* ]]; then
-            url_author=$(awk -v env="$environment" -F": " '/^ *"'"$environment"'":/{print $2}' .github/env_urls.yaml | xargs)
-            url_preview=$(awk -v env="$environment" -F": " '/^ *"'"$environment"'"-preview:/{print $2}' .github/env_urls.yaml | xargs)
+            url_author=$(awk -v env="$environment" -F": " '$1 ~ "^ *\""env"\" {print $2}' .github/env_urls.yaml | xargs)
+            url_preview=$(awk -v env="$environment" -F": " '$1 ~ "^ *\""env"\"-preview" {print $2}' .github/env_urls.yaml | xargs)
             echo "Prod environment detected, URLs: $url_author, $url_preview"
             echo "AEM_HOST_AUTHOR=$url_author" >> $GITHUB_ENV
             echo "AEM_HOST_PREVIEW=$url_preview" >> $GITHUB_ENV
@@ -110,7 +115,7 @@ jobs:
           echo "Install Response: $INSTALL_RESPONSE"
 
           AEM_GROUP=$(echo $INSTALL_RESPONSE | grep -oP '(?<=<group>).*?(?=</group>)')
-          AEM_DOWNLOAD_NAME=$(echo $INSTALL_RESPONSE | grep -oP '(?<=<downloadName>).*?(?=</downloadName>)')
+          AEM_DOWNLOAD_NAME=$(echo $INSTALL_RESPONSE | grep -oP '(?<=<downloadName>).*?(?<=</downloadName>)')
 
           echo "AEM_GROUP=$AEM_GROUP" >> $GITHUB_ENV
           echo "AEM_DOWNLOAD_NAME=$AEM_DOWNLOAD_NAME" >> $GITHUB_ENV
