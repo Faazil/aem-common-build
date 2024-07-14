@@ -54,18 +54,17 @@ jobs:
           # Extract URL based on environment
           if [[ "$environment" == *"prod-live"* ]]; then
             stripped_env=$(echo "$environment" | sed 's/-live//')
-            url=$(awk -v env="$stripped_env" -F": " '$1 ~ "^ *\""env"\" {print $2}' .github/env_urls.yaml | xargs)
+            url=$(awk -v env="$stripped_env" -F": " '$1 ~ "^ *"env" *" {print $2}' .github/env_urls.yaml | xargs)
             echo "Prod-live environment detected, URL: $url"
             echo "AEM_HOST_AUTHOR=$url" >> $GITHUB_ENV
-            echo "AEM_HOST_AUTHOR=$url" >> $GITHUB_ENV
           elif [[ "$environment" == *"prod"* ]] && [[ "$environment" != *"live"* ]]; then
-            url_author=$(awk -v env="$environment" -F": " '$1 ~ "^ *\""env"\" {print $2}' .github/env_urls.yaml | xargs)
-            url_preview=$(awk -v env="$environment" -F": " '$1 ~ "^ *\""env"\"-preview" {print $2}' .github/env_urls.yaml | xargs)
+            url_author=$(awk -v env="$environment" -F": " '$1 ~ "^ *"env" *" {print $2}' .github/env_urls.yaml | xargs)
+            url_preview=$(awk -v env="$environment" -F": " '$1 ~ "^ *"env"-preview *" {print $2}' .github/env_urls.yaml | xargs)
             echo "Prod environment detected, URLs: $url_author, $url_preview"
             echo "AEM_HOST_AUTHOR=$url_author" >> $GITHUB_ENV
             echo "AEM_HOST_PREVIEW=$url_preview" >> $GITHUB_ENV
           else
-            url=$(awk -v env="$environment" -F": " 'BEGIN {FS=": "; OFS=": "} $1 ~ "^ *"env"$" {gsub(/^ *| *$/, "", $2); print $2}' .github/env_urls.yaml | xargs)
+            url=$(awk -v env="$environment" -F": " 'BEGIN {FS=": "; OFS=": "} $1 ~ "^ *"env" *" {gsub(/^ *| *$/, "", $2); print $2}' .github/env_urls.yaml | xargs)
             echo "General environment detected, URL: $url"
             if [ -z "$url" ]; then
               echo "Invalid environment: $environment"
