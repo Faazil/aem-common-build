@@ -82,7 +82,7 @@ jobs:
         if: contains(env.environment, 'live') && env.AEM_HOST_AUTHOR
         env:
           AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
-          AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
+          AEM_PACKAGE_NAME: aem-packages/we.retail.community.apps-1.11.84.zip
           AEM_HOST_AUTHOR: ${{ env.AEM_HOST_AUTHOR }}
         run: |
           echo "Deploying to: $AEM_HOST_AUTHOR"
