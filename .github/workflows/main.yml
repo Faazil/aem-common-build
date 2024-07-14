@@ -86,8 +86,27 @@ jobs:
             --connect-timeout 10 \
             "$AEM_HOST_AUTHOR/crx/packmgr/service/.json"
 
-      - name: get group and downloadname
-        run: xyz
+      - name: Upload and Install AEM package
+        run: |
+           INSTALL_RESPONSE=$(curl -u admin:admin \
+           -F file=@we.retail.community.apps-1.11.84.zip \
+           -F name=test.zip \
+           -F force=true \
+           -F install=true \
+           http://localhost:4502/crx/packmgr/service.jsp)
+
+           echo "Install Response: $INSTALL_RESPONSE"
+
+           AEM_GROUP=$(echo $INSTALL_RESPONSE | grep -oP '(?<=<group>).*?(?=</group>)')
+           AEM_DOWNLOAD_NAME=$(echo $INSTALL_RESPONSE | grep -oP '(?<=<downloadName>).*?(?=</downloadName>)')
+
+           echo "AEM_GROUP=$AEM_GROUP" >> $GITHUB_ENV
+           echo "AEM_DOWNLOAD_NAME=$AEM_DOWNLOAD_NAME" >> $GITHUB_ENV
+
+      - name: Checking output 
+        run: |
+          echo "Extracted AEM_GROUP: $AEM_GROUP"
+          echo "Extracted AEM_DOWNLOAD_NAME: $AEM_DOWNLOAD_NAME"
 
 
       - name: Upload AEM package to preview
@@ -120,6 +139,17 @@ jobs:
             --connect-timeout 10 \
             "$AEM_HOST_AUTHOR/crx/packmgr/service/.json"
         
-curl -u admin:admin -X POST -F path="/etc/packages/{group}/{downloadname}" -F cmd="activate" http://localhost:4502/bin/replicate.json
+      - name: Activate AEM Package
+        env:
+         AEM_GROUP: ${{ env.AEM_GROUP }}
+         AEM_DOWNLOAD_NAME: ${{ env.AEM_DOWNLOAD_NAME }}
+        run: |
+          echo "Activating package: $AEM_GROUP/$AEM_DOWNLOAD_NAME"
+          ACTIVATION_RESPONSE=$(curl -u admin:admin \
+          -X POST \
+          -F path="/etc/packages/$AEM_GROUP/$AEM_DOWNLOAD_NAME" \
+          -F cmd="activate" \
+          http://localhost:4502/bin/replicate.json)
 
+          echo "Activation Response: $ACTIVATION_RESPONSE"
      
