@@ -10,11 +10,15 @@ on:
 jobs:
   upload-package:
     runs-on: ubuntu-latest
+    outputs:
+      AEM_HOST: ${{ steps.extract_url.outputs.AEM_HOST }}
+      AEM_HOST_AUTHOR: ${{ steps.extract_url.outputs.AEM_HOST_AUTHOR }}
+      AEM_HOST_PREVIEW: ${{ steps.extract_url.outputs.AEM_HOST_PREVIEW }}
     steps:
       - name: Print environment variables
         run: echo "${{ inputs.AEM_ENV }}"
 
-      - name: Checkout 
+      - name: Checkout
         uses: actions/checkout@v3
 
       - name: Validate Environment Input
@@ -25,7 +29,7 @@ jobs:
           VALID_ENVIRONMENTS_ARRAY=($VALID_ENVIRONMENTS)
           if [[ " ${VALID_ENVIRONMENTS_ARRAY[@]} " =~ " ${INPUT_ENVIRONMENT} " ]]; then
             echo "Environment input is valid: ${INPUT_ENVIRONMENT}"
-            echo "environment=${INPUT_ENVIRONMENT}" >> $GITHUB_ENV
+            echo "environment=${INPUT_ENVIRONMENT}" >> $GITHUB_OUTPUT
           else
             echo "Invalid environment input: ${INPUT_ENVIRONMENT}"
             exit 1
@@ -41,26 +45,30 @@ jobs:
       - name: Extract Environment URL
         id: extract_url
         run: |
-          environment=${{ inputs.AEM_ENV }}
+          environment=${{ steps.validate.outputs.environment }}
           
           if [[ "$environment" == *"prod-live"* ]]; then
-            url=$(awk -v lob="$environment" -F": " '$1 ~ "^ *\""lob"-prod\"" {print $2}' .github/env_urls.yaml)
+            url=$(awk -v env="$environment" -F": " '/^ *"'"$environment"'"-prod:/{print $2}' .github/env_urls.yaml)
             echo "Prod-live environment detected, URL: $url"
             echo "AEM_HOST_AUTHOR=$url" >> $GITHUB_ENV
+            echo "::set-output name=AEM_HOST_AUTHOR::$url"
           elif [[ "$environment" == *"prod"* ]] && [[ "$environment" != *"live"* ]]; then
-            url_author=$(awk -v lob="$environment" -F": " '$1 ~ "^ *\""lob"\"" {print $2}' .github/env_urls.yaml)
-            url_preview=$(awk -v lob="$environment" -F": " '$1 ~ "^ *\""lob"-preview\"" {print $2}' .github/env_urls.yaml)
+            url_author=$(awk -v env="$environment" -F": " '/^ *"'"$environment"'":/{print $2}' .github/env_urls.yaml)
+            url_preview=$(awk -v env="$environment" -F": " '/^ *"'"$environment"'"-preview:/{print $2}' .github/env_urls.yaml)
             echo "Prod environment detected, URLs: $url_author, $url_preview"
             echo "AEM_HOST_AUTHOR=$url_author" >> $GITHUB_ENV
             echo "AEM_HOST_PREVIEW=$url_preview" >> $GITHUB_ENV
+            echo "::set-output name=AEM_HOST_AUTHOR::$url_author"
+            echo "::set-output name=AEM_HOST_PREVIEW::$url_preview"
           else
-            url=$(awk -v env="$environment" -F": " '$1 ~ "^ *\""env"\"" {print $2}' .github/env_urls.yaml)
+            url=$(awk -v env="$environment" -F": " 'BEGIN {FS=": "; OFS=": "} $1 ~ "^ *"env"$" {gsub(/^ *| *$/, "", $2); print $2}' .github/env_urls.yaml)
             echo "General environment detected, URL: $url"
             if [ -z "$url" ]; then
               echo "Invalid environment: $environment"
               exit 1
             fi
             echo "AEM_HOST=$url" >> $GITHUB_ENV
+            echo "::set-output name=AEM_HOST::$url"
           fi
 
       - name: Debugging URL
@@ -70,11 +78,11 @@ jobs:
           echo "AEM_HOST: $AEM_HOST"
 
       - name: Upload AEM package to Author
-        if: env.AEM_HOST_AUTHOR
+        if: steps.extract_url.outputs.AEM_HOST_AUTHOR
         env:
           AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
           AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
-          AEM_HOST_AUTHOR: ${{ env.AEM_HOST_AUTHOR }}
+          AEM_HOST_AUTHOR: ${{ steps.extract_url.outputs.AEM_HOST_AUTHOR }}
         run: |
           echo "Deploying to: $AEM_HOST_AUTHOR"
           RESPONSE=$(curl -u $AEM_CREDENTIALS \
@@ -104,56 +112,4 @@ jobs:
           echo "Install Response: $INSTALL_RESPONSE"
 
           AEM_GROUP=$(echo $INSTALL_RESPONSE | grep -oP '(?<=<group>).*?(?=</group>)')
-          AEM_DOWNLOAD_NAME=$(echo $INSTALL_RESPONSE | grep -oP '(?<=<downloadName>).*?(?=</downloadName>)')
-
-          echo "AEM_GROUP=$AEM_GROUP" >> $GITHUB_ENV
-          echo "AEM_DOWNLOAD_NAME=$AEM_DOWNLOAD_NAME" >> $GITHUB_ENV
-
-      - name: Checking output 
-        run: |
-          echo "Extracted AEM_GROUP: $AEM_GROUP"
-          echo "Extracted AEM_DOWNLOAD_NAME: $AEM_DOWNLOAD_NAME"
-
-      - name: Upload AEM package to preview
-        if: env.AEM_HOST_PREVIEW
-        env:
-          AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
-          AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
-          AEM_HOST_PREVIEW: ${{ env.AEM_HOST_PREVIEW }}
-        run: |
-          echo "Deploying to preview: $AEM_HOST_PREVIEW"
-          curl -u $AEM_CREDENTIALS \
-            -F cmd=upload \
-            -F force=true \
-            -F package=@${AEM_PACKAGE_NAME} \
-            --connect-timeout 10 \
-            "$AEM_HOST_PREVIEW/crx/packmgr/service/.json"
-
-      - name: Upload AEM package to author (prod-live and non-prod environments)
-        if: env.AEM_HOST_AUTHOR && (github.event.inputs.AEM_ENV == 'prod-live' || github.event.inputs.AEM_ENV != 'prod')
-        env:
-          AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
-          AEM_PACKAGE_NAME: ${{ inputs.AEM_PACKAGE_NAME }}
-          AEM_HOST_AUTHOR: ${{ env.AEM_HOST_AUTHOR }}
-        run: |
-          echo "Deploying to author: $AEM_HOST_AUTHOR"
-          curl -u $AEM_CREDENTIALS \
-            -F cmd=upload \
-            -F force=true \
-            -F package=@${AEM_PACKAGE_NAME} \
-            --connect-timeout 10 \
-            "$AEM_HOST_AUTHOR/crx/packmgr/service/.json"
-        
-      - name: Activate AEM Package
-        env:
-          AEM_GROUP: ${{ env.AEM_GROUP }}
-          AEM_DOWNLOAD_NAME: ${{ env.AEM_DOWNLOAD_NAME }}
-        run: |
-          echo "Activating package: $AEM_GROUP/$AEM_DOWNLOAD_NAME"
-          ACTIVATION_RESPONSE=$(curl -u admin:admin \
-            -X POST \
-            -F path="/etc/packages/$AEM_GROUP/$AEM_DOWNLOAD_NAME" \
-            -F cmd="activate" \
-            http://localhost:4502/bin/replicate.json)
-
-          echo "Activation Response: $ACTIVATION_RESPONSE"
+          AEM_D
