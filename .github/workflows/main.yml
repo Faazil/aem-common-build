@@ -78,6 +78,15 @@ jobs:
           echo "AEM_HOST_PREVIEW: $AEM_HOST_PREVIEW"
           echo "AEM_HOST: $AEM_HOST"
 
+      - name: Verify AEM package file exist or not
+        run: |
+          if [ -f "aem-packages/we.retail.community.apps-1.11.84.zip" ]; then
+            echo "AEM package file exists."
+          else
+             echo "AEM package file does not exist."
+          exit 1
+          fi
+
       - name: Upload AEM package to Author ( When input contains string *live*)
         if: contains(env.environment, 'live') && env.AEM_HOST_AUTHOR
         env:
