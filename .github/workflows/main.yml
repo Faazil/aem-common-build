@@ -144,6 +144,7 @@ jobs:
             "$AEM_HOST_AUTHOR/crx/packmgr/service/.json"
         
       - name: Activate AEM Package
+        if: env.AEM_HOST_AUTHOR && env.AEM_HOST
         env:
           AEM_GROUP: ${{ env.AEM_GROUP }}
           AEM_DOWNLOAD_NAME: ${{ env.AEM_DOWNLOAD_NAME }}
