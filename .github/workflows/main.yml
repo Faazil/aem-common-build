@@ -30,6 +30,7 @@ jobs:
           if [[ " ${VALID_ENVIRONMENTS_ARRAY[@]} " =~ " ${INPUT_ENVIRONMENT} " ]]; then
             echo "Environment input is valid: ${INPUT_ENVIRONMENT}"
             echo "environment=${INPUT_ENVIRONMENT}" >> $GITHUB_ENV
+            echo "environment=${INPUT_ENVIRONMENT}" >> $GITHUB_OUTPUT
           else
             echo "Invalid environment input: ${INPUT_ENVIRONMENT}"
             exit 1
@@ -44,8 +45,10 @@ jobs:
 
       - name: Extract Environment URL
         id: extract_url
+        env:
+          environment: ${{ steps.validate.outputs.environment }}
         run: |
-          environment=${{ steps.validate.outputs.environment }}
+          environment=${environment}
           
           # Debug: Print the content of the env_urls.yaml file
           echo "Content of .github/env_urls.yaml:"
