@@ -130,16 +130,19 @@ jobs:
 
               
       - name: Activate AEM Package to Replicate
-        if: env.AEM_HOST_AUTHOR (or) env.AEM_HOST (!= preview )
+        if:  env.AEM_HOST_AUTHOR || env.AEM_HOST
         env:
-          AEM_GROUP: ${{ env.AEM_GROUP }}
-          AEM_DOWNLOAD_NAME: ${{ env.AEM_DOWNLOAD_NAME }}
+           AEM_GROUP: ${{ env.AEM_GROUP }}
+           AEM_DOWNLOAD_NAME: ${{ env.AEM_DOWNLOAD_NAME }}
+           TARGET_AEM_HOST: ${{ env.AEM_HOST_AUTHOR || env.AEM_HOST }}
         run: |
           echo "Activating package: $AEM_GROUP/$AEM_DOWNLOAD_NAME"
+          echo "Using host: $TARGET_AEM_HOST"
           ACTIVATION_RESPONSE=$(curl -u admin:admin \
-            -X POST \
-            -F path="/etc/packages/$AEM_GROUP/$AEM_DOWNLOAD_NAME" \
-            -F cmd="activate" \
-            http://localhost:4502/bin/replicate.json)
+           -X POST \
+           -F path="/etc/packages/$AEM_GROUP/$AEM_DOWNLOAD_NAME" \
+           -F cmd="activate" \
+            "$TARGET_AEM_HOST/bin/replicate.json")
 
-          echo "Activation Response: $ACTIVATION_RESPONSE"
+           echo "Activation Response: $ACTIVATION_RESPONSE"
+
