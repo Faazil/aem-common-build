@@ -8,6 +8,28 @@ on:
         type: string
 
 jobs:
+  pull_aws_secret:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up AWS CLI
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1 
+
+    - name: Retrieve secret from AWS Secrets Manager
+      id: get_secret
+      run: |
+        SECRET_VALUE=$(aws secretsmanager get-secret-value --secret-id your_secret_name --query SecretString --output text)
+        echo "SECRET_VALUE=$SECRET_VALUE" >> $GITHUB_ENV
+
+    - name: Use below secret in the workflow
+      run: echo "The secret is ${{ env.SECRET_VALUE }}"
   upload-package:
     runs-on: aem1
     outputs:
