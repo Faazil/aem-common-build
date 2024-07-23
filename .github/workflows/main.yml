@@ -19,13 +19,13 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          region: us-east-1
+          aws-region: us-east-1
 
       - name: Get Secret
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids: aem
-          region: us-east-1
+          aws-region: us-east-1
           output-file: secret.txt
 
       - name: Use Secret
