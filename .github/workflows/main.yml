@@ -25,7 +25,7 @@ jobs:
     - name: Retrieve secret from AWS Secrets Manager
       id: get_secret
       run: |
-        SECRET_VALUE=$(aws secretsmanager get-secret-value --secret-id your_secret_name --query SecretString --output text)
+        SECRET_VALUE=$(aws secretsmanager get-secret-value --secret-id aem --query SecretString --output text)
         echo "SECRET_VALUE=$SECRET_VALUE" >> $GITHUB_ENV
 
     - name: Use below secret in the workflow
