@@ -25,7 +25,7 @@ jobs:
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids: aem
-          region: your-region
+          region: us-east-1
           output-file: secret.txt
 
       - name: Use Secret
