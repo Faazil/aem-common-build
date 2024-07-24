@@ -47,7 +47,7 @@ jobs:
           echo "AEM_PASS_AWS=$AEM_PASS_AWS" >> $GITHUB_ENV
 
   upload-package:
-    runs-on: aem1
+    runs-on: aem2
     outputs:
       AEM_HOST: ${{ steps.extract_url.outputs.AEM_HOST }}
       AEM_HOST_AUTHOR: ${{ steps.extract_url.outputs.AEM_HOST_AUTHOR }}
