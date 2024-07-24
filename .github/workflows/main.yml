@@ -21,10 +21,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Test AWS Credentials
-        run: |
-          aws sts get-caller-identity
-
       - name: Get Secret
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
