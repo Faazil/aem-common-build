@@ -12,25 +12,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-north-1
+    - name: Set up AWS CLI
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y awscli jq
 
-      - name: Get Secret
-        uses: aws-actions/aws-secretsmanager-get-secrets@v1
-        with:
-          secret-ids: aem-creds
-          aws-region: eu-north-1
-          output-file: secret.txt
+    - name: Configure AWS credentials
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: |
+        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+        aws configure set region eu-north-1
 
-      - name: Use Secret
-        run: |
-          echo "The secret is: $(cat secret.txt)"
+    - name: Retrieve secrets from AWS Secrets Manager
+      env:
+        SECRET_NAME: aem-creds
+      run: |
+        secret_value=$(aws secretsmanager get-secret-value --secret-id $SECRET_NAME | jq -r '.SecretString')
+        echo "SECRET_VALUE=$secret_value" >> $GITHUB_ENV
+
   upload-package:
     runs-on: aem1
     outputs:
