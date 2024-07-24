@@ -24,7 +24,7 @@ jobs:
       - name: Get Secret
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
-          secret-ids: aem
+          secret-ids: aem-creds
           aws-region: us-east-1
           output-file: secret.txt
 
