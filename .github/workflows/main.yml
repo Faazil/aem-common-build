@@ -41,6 +41,11 @@ jobs:
         secret_value=$(aws secretsmanager get-secret-value --secret-id $SECRET_NAME | jq -r '.SecretString')
         echo "SECRET_VALUE=$secret_value" >> $GITHUB_ENV
 
+    - name: Extract AEM Password
+      run: |
+          AEM_PASS_AWS=$(echo $SECRET_VALUE | jq -r '.aem_password_aws')
+          echo "AEM_PASS_AWS=$AEM_PASS_AWS" >> $GITHUB_ENV
+
   upload-package:
     runs-on: aem1
     outputs:
@@ -128,7 +133,7 @@ jobs:
       - name: Upload AEM package to Author ( When input contains string *live*)- Always
         if: contains(env.environment, 'live') && env.AEM_HOST_AUTHOR
         env:
-          AEM_CREDENTIALS: ${{ secrets.AEM_CREDENTIALS }}
+          AEM_CREDENTIALS: $AEM_PASS_AWS
           AEM_PACKAGE_NAME: aem/we.retail.community.apps-1.11.84.zip
           AEM_HOST_AUTHOR: ${{ env.AEM_HOST_AUTHOR }}
         run: |
