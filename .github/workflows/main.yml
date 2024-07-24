@@ -6,6 +6,11 @@ on:
       AEM_ENV:
         required: true
         type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
 
 jobs:
   check-aws-credentials:
@@ -22,8 +27,8 @@ jobs:
 
     - name: Configure AWS credentials
       env:
-        AWS_ACCESS_KEY_ID: AKIAQEFWAXQO73SSAPQW
-        AWS_SECRET_ACCESS_KEY: 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
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: |
         aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
